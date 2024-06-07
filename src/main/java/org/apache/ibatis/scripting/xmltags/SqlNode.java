@@ -19,5 +19,10 @@ package org.apache.ibatis.scripting.xmltags;
  * @author Clinton Begin
  */
 public interface SqlNode {
+  /**
+   * 应用 sql 节点，通常如果条件满足，则会调用 {@link DynamicContext#appendSql(String)} 方法拼接sql
+   * @param context
+   * @return
+   */
   boolean apply(DynamicContext context);
 }

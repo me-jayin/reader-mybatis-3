@@ -15,19 +15,22 @@
  */
 package org.apache.ibatis.builder;
 
-import java.util.List;
-
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.ParameterMapping;
 import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.session.Configuration;
 
+import java.util.List;
+
 /**
+ * 静态SQL，因为不存在${}占位符，以及动态SQL标签，所以SQL语句固定。
+ * 因此直接将所有 #{} 解析出对应的 ParameterMapping 即可，从而提高后续解析效率
  * @author Clinton Begin
  */
 public class StaticSqlSource implements SqlSource {
-
+  /** 替换了 #{} 占位符的表达式 */
   private final String sql;
+  /** 解析出来的 ParameterMapping */
   private final List<ParameterMapping> parameterMappings;
   private final Configuration configuration;
 
@@ -43,6 +46,7 @@ public class StaticSqlSource implements SqlSource {
 
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
+    // 基于已解析的 ParameterMapping 生成 BoundSql 的
     return new BoundSql(configuration, sql, parameterMappings, parameterObject);
   }
 

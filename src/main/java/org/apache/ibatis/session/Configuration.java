@@ -762,6 +762,7 @@ public class Configuration {
     public boolean hasKeyGenerator(String id) {
         return keyGenerators.containsKey(id);
     }
+
     /** 使用 namespace - cache 的映射 */
     public void addCache(Cache cache) {
         caches.put(cache.getId(), cache);
@@ -828,6 +829,10 @@ public class Configuration {
         return parameterMaps.containsKey(id);
     }
 
+    /**
+     * 注册 MappedStatement
+     * @param ms
+     */
     public void addMappedStatement(MappedStatement ms) {
         mappedStatements.put(ms.getId(), ms);
     }
@@ -937,6 +942,11 @@ public class Configuration {
         mapperRegistry.addMappers(packageName);
     }
 
+    /**
+     * 添加mapper接口类，并进行注册
+     * @param type
+     * @param <T>
+     */
     public <T> void addMapper(Class<T> type) {
         mapperRegistry.addMapper(type);
     }
@@ -1029,10 +1039,15 @@ public class Configuration {
         }
     }
 
+    /**
+     * 解析未处理完成的 ResultMap
+     * @param reportUnresolved 如果仍存在 IncompleteElementException 时，是否抛出
+     */
     public void parsePendingResultMaps(boolean reportUnresolved) {
         if (incompleteResultMaps.isEmpty()) {
             return;
         }
+        // 加锁，保证数据安全
         incompleteResultMapsLock.lock();
         try {
             boolean resolved;
@@ -1042,14 +1057,15 @@ public class Configuration {
                 Iterator<ResultMapResolver> iterator = incompleteResultMaps.iterator();
                 while (iterator.hasNext()) {
                     try {
-                        iterator.next().resolve();
-                        iterator.remove();
+                        iterator.next().resolve(); // 继续尝试解析
+                        iterator.remove(); // 解析成功则移除
                         resolved = true;
                     } catch (IncompleteElementException e) {
                         ex = e;
                     }
                 }
             } while (resolved);
+            // 如果需要抛出移除，并且仍存在未完成的 ResultMap 则抛出异常
             if (reportUnresolved && !incompleteResultMaps.isEmpty() && ex != null) {
                 // At least one result map is unresolvable.
                 throw ex;

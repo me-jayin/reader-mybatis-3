@@ -151,9 +151,8 @@
         </include>
     </select>
 
-    <select id="selectMultiToList" resultMap="User,usr">
-        SELECT ('123' + 1) AS usr, 'abc' pwd, '广东省' `province`, '深圳' `city`, '${_databaseId}' db;
-        SELECT 'test' as usr;
+    <select id="selectMultiToList" resultMap="User">
+        SELECT ('123' + 1) AS usr, 'abc' pwd, '广东省' `province`, '深圳' `city`, '${_databaseId}' db
     </select>
 
 <!--    &lt;!&ndash;-->
@@ -185,7 +184,10 @@
         <selectKey databaseId="" resultType="" keyProperty="id" order="AFTER" statementType="PREPARED">
             SELECT LAST_INSERT_ID()
         </selectKey>
-        INSERT INTO user(usr, pwd) VALUES(#{usr}, #{pwd})
+        <!-- #{usr, jdbcType=VARCHAR, javaType=string, numericScaale=3, resultMap=User, mode=IN,
+               typeHandler=xyz.me4cxy.custom.CustomerTypeHandler, jdbcTypeName=CustomerTypeHandler
+             } -->
+        INSERT INTO user(usr, pwd) VALUES(#{usr, jdbcType=VARCHAR}, #{pwd})
     </insert>
 
 </mapper>

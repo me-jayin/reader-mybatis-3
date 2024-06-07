@@ -25,24 +25,33 @@ import org.apache.ibatis.session.Configuration;
  */
 public class DynamicSqlSource implements SqlSource {
 
-  private final Configuration configuration;
-  private final SqlNode rootSqlNode;
+    private final Configuration configuration;
+    /**
+     * SqlNode节点，记录sql标签的节点描述
+     */
+    private final SqlNode rootSqlNode;
 
-  public DynamicSqlSource(Configuration configuration, SqlNode rootSqlNode) {
-    this.configuration = configuration;
-    this.rootSqlNode = rootSqlNode;
-  }
+    public DynamicSqlSource(Configuration configuration, SqlNode rootSqlNode) {
+        this.configuration = configuration;
+        this.rootSqlNode = rootSqlNode;
+    }
 
-  @Override
-  public BoundSql getBoundSql(Object parameterObject) {
-    DynamicContext context = new DynamicContext(configuration, parameterObject);
-    rootSqlNode.apply(context);
-    SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
-    Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
-    SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), parameterType, context.getBindings());
-    BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
-    context.getBindings().forEach(boundSql::setAdditionalParameter);
-    return boundSql;
-  }
+    /**
+     * 基于方法入参，构建一个 SqlSource
+     * @param parameterObject
+     * @return
+     */
+    @Override
+    public BoundSql getBoundSql(Object parameterObject) {
+        // 构建 DynamicContext
+        DynamicContext context = new DynamicContext(configuration, parameterObject);
+        rootSqlNode.apply(context);
+        SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
+        Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
+        SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), parameterType, context.getBindings());
+        BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
+        context.getBindings().forEach(boundSql::setAdditionalParameter);
+        return boundSql;
+    }
 
 }
