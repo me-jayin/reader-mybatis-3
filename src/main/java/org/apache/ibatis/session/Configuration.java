@@ -727,9 +727,16 @@ public class Configuration {
         return newExecutor(transaction, defaultExecutorType);
     }
 
+    /**
+     * 创建执行器，会根据缓存的启用来包装 CacheExecutor
+     * @param transaction 事务对象
+     * @param executorType 执行器类型
+     * @return
+     */
     public Executor newExecutor(Transaction transaction, ExecutorType executorType) {
         executorType = executorType == null ? defaultExecutorType : executorType;
         Executor executor;
+        // 根据不同类型创建不同执行器
         if (ExecutorType.BATCH == executorType) {
             executor = new BatchExecutor(this, transaction);
         } else if (ExecutorType.REUSE == executorType) {
@@ -737,9 +744,11 @@ public class Configuration {
         } else {
             executor = new SimpleExecutor(this, transaction);
         }
+        // 是否开启缓存，如果开启则对执行器包装一层 CachingExecutor ，使其具有缓存能力
         if (cacheEnabled) {
             executor = new CachingExecutor(executor);
         }
+        // 将拦截链中的拦截器进行应用，使用 Interceptor 对当前执行器不断进行代理
         return (Executor) interceptorChain.pluginAll(executor);
     }
 
@@ -944,6 +953,7 @@ public class Configuration {
 
     /**
      * 添加mapper接口类，并进行注册
+     * 该方法会通过 MapperAnnotationBuilder 找到对应 mapper 类加载解析 MappedStatement
      * @param type
      * @param <T>
      */
@@ -951,6 +961,13 @@ public class Configuration {
         mapperRegistry.addMapper(type);
     }
 
+    /**
+     * 从 MapperRegistry 中获取 mapper 对象
+     * @param type
+     * @param sqlSession
+     * @return
+     * @param <T>
+     */
     public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
         return mapperRegistry.getMapper(type, sqlSession);
     }
@@ -985,6 +1002,10 @@ public class Configuration {
         parsePendingMethods(true);
     }
 
+    /**
+     * 继续解析 org.apache.ibatis.builder.annotation.MapperAnnotationBuilder#parse() 时未完成的 method
+     * @param reportUnresolved
+     */
     public void parsePendingMethods(boolean reportUnresolved) {
         if (incompleteMethods.isEmpty()) {
             return;

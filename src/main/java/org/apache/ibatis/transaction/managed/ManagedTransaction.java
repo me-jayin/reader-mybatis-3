@@ -15,20 +15,23 @@
  */
 package org.apache.ibatis.transaction.managed;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import javax.sql.DataSource;
-
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 import org.apache.ibatis.transaction.Transaction;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
 /**
  * {@link Transaction} that lets the container manage the full lifecycle of the transaction. Delays connection retrieval
  * until getConnection() is called. Ignores all commit or rollback requests. By default, it closes the connection but
  * can be configured not to do it.
+ * 使容器能够管理事务的整个生命周期。延迟连接检索，直到调用getConnection（）。忽略所有提交或回滚请求。
+ * 默认情况下，它会关闭连接，但可以配置为不关闭连接。
+ *
+ * （事务的管理都交由外部负责）
  *
  * @author Clinton Begin
  *

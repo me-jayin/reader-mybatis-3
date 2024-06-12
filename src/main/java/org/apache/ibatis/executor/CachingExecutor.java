@@ -15,24 +15,21 @@
  */
 package org.apache.ibatis.executor;
 
-import java.sql.SQLException;
-import java.util.List;
-
 import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.cache.TransactionalCacheManager;
 import org.apache.ibatis.cursor.Cursor;
-import org.apache.ibatis.mapping.BoundSql;
-import org.apache.ibatis.mapping.MappedStatement;
-import org.apache.ibatis.mapping.ParameterMapping;
-import org.apache.ibatis.mapping.ParameterMode;
-import org.apache.ibatis.mapping.StatementType;
+import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
+import java.sql.SQLException;
+import java.util.List;
+
 /**
+ * 缓存执行器，执行器的包装类，使执行器具有缓存的能力
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
@@ -43,6 +40,7 @@ public class CachingExecutor implements Executor {
 
   public CachingExecutor(Executor delegate) {
     this.delegate = delegate;
+    // 设置被代理的执行器包装对象，反正执行器中内部调用时，丧失最外层执行器的能力
     delegate.setExecutorWrapper(this);
   }
 
@@ -76,6 +74,15 @@ public class CachingExecutor implements Executor {
     return delegate.update(ms, parameterObject);
   }
 
+  /**
+   * 通过游标查询的操作不进行缓存
+   * @param ms
+   * @param parameter
+   * @param rowBounds
+   * @return
+   * @param <E>
+   * @throws SQLException
+   */
   @Override
   public <E> Cursor<E> queryCursor(MappedStatement ms, Object parameter, RowBounds rowBounds) throws SQLException {
     flushCacheIfRequired(ms);
@@ -165,6 +172,10 @@ public class CachingExecutor implements Executor {
     delegate.clearLocalCache();
   }
 
+  /**
+   * 如果需要的话则清除缓存，根据 flushCache 属性来判断
+   * @param ms
+   */
   private void flushCacheIfRequired(MappedStatement ms) {
     Cache cache = ms.getCache();
     if (cache != null && ms.isFlushCacheRequired()) {
