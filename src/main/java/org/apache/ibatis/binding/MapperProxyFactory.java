@@ -52,7 +52,7 @@ public class MapperProxyFactory<T> {
     }
 
     /**
-     *
+     * 构建一个jdk代理对象，提供模板方法，供用户执行实现代理方法（不过目前mybatis没有提供设置自定义代理工厂的api，因此目前仍无法通过配置来改变默认的MapperProxyFactory工厂的行为）
      * @param mapperProxy
      * @return
      */
@@ -69,6 +69,7 @@ public class MapperProxyFactory<T> {
      */
     public T newInstance(SqlSession sqlSession) {
         final MapperProxy<T> mapperProxy = new MapperProxy<>(sqlSession, mapperInterface, methodCache);
+        // 构建一个代理对象，这里预留了一个protected方法，供用户自定义实现
         return newInstance(mapperProxy);
     }
 

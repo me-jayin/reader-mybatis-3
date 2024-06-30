@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 调用信息
+ * 调用信息封装对象，可获取被调用的方法、原对象，以及方法入参，也可以直接执行被调用方法
  *
  * @author Clinton Begin
  */
@@ -70,7 +70,7 @@ public class Invocation {
     }
 
     /**
-     * 执行方法的调用
+     * 使用原对象、原入参进行调用原方法
      *
      * @return
      * @throws InvocationTargetException

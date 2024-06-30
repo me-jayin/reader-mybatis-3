@@ -31,29 +31,35 @@ import java.util.HashMap;
  */
 public class RawSqlSource implements SqlSource {
 
-  private final SqlSource sqlSource;
+    private final SqlSource sqlSource;
 
-  public RawSqlSource(Configuration configuration, SqlNode rootSqlNode, Class<?> parameterType) {
-    this(configuration, getSql(configuration, rootSqlNode), parameterType);
-  }
+    public RawSqlSource(Configuration configuration, SqlNode rootSqlNode, Class<?> parameterType) {
+        this(configuration, getSql(configuration, rootSqlNode), parameterType);
+    }
 
-  public RawSqlSource(Configuration configuration, String sql, Class<?> parameterType) {
-    // SqlSource构建者，在创建 RawSqlSource 时就先计算并构建一个静态SqlSource
-    SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
-    Class<?> clazz = parameterType == null ? Object.class : parameterType;
-    // 解析完成，得到最后的 SqlSource
-    sqlSource = sqlSourceParser.parse(sql, clazz, new HashMap<>());
-  }
+    public RawSqlSource(Configuration configuration, String sql, Class<?> parameterType) {
+        // SqlSource构建者，在创建 RawSqlSource 时就先计算并构建一个静态SqlSource
+        SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
+        Class<?> clazz = parameterType == null ? Object.class : parameterType;
+        // 解析完成，得到最后的 SqlSource
+        sqlSource = sqlSourceParser.parse(sql, clazz, new HashMap<>());
+    }
 
-  private static String getSql(Configuration configuration, SqlNode rootSqlNode) {
-    DynamicContext context = new DynamicContext(configuration, null);
-    rootSqlNode.apply(context);
-    return context.getSql();
-  }
+    /**
+     * 基于 SqlNode（SQL的标签），获取到对应的 SQL 语句
+     * @param configuration
+     * @param rootSqlNode
+     * @return
+     */
+    private static String getSql(Configuration configuration, SqlNode rootSqlNode) {
+        DynamicContext context = new DynamicContext(configuration, null);
+        rootSqlNode.apply(context);
+        return context.getSql();
+    }
 
-  @Override
-  public BoundSql getBoundSql(Object parameterObject) {
-    return sqlSource.getBoundSql(parameterObject);
-  }
+    @Override
+    public BoundSql getBoundSql(Object parameterObject) {
+        return sqlSource.getBoundSql(parameterObject);
+    }
 
 }

@@ -93,7 +93,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   }
 
   /**
-   * 缓存或创建调用器
+   * 从缓存中获取 MapperMethodInvoker，如果没有则创建并获取
    * @param method
    * @return
    * @throws Throwable
@@ -106,6 +106,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
           return new PlainMethodInvoker(new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
         }
         try {
+          // 如果是接口的 default 方法，则构建 DefaultMethodInvoker
           if (privateLookupInMethod == null) {
             return new DefaultMethodInvoker(getMethodHandleJava8(method));
           }
@@ -149,9 +150,18 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
       this.mapperMethod = mapperMethod;
     }
 
+    /**
+     * 实际是交给 MapperMethod#execute 进行处理
+     * @param proxy
+     * @param method
+     * @param args
+     * @param sqlSession
+     * @return
+     * @throws Throwable
+     */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable {
-      // 交给 MapperMethod 进行执行
+      // 交给 MapperMethod#execute(SqlSession, Object[])
       return mapperMethod.execute(sqlSession, args);
     }
   }

@@ -39,7 +39,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * mapper的方法，重点！！！作为正常 mapper 方法的调用入口
+ * 重点！！！
+ * mapper的方法，作为正常 mapper 方法的调用入口
+ * 内部持有属性：
+ * 1.SqlCommand sql命令对象，存有该方法的 MappedStatement id 和 statement 的sql语句类型，如 SELECT、UPDATE等
+ * 2.MethodSignature 方法签名，对方法的描述，如方法响应类型的描述、RowBounds、ResultHandler以及参数名称解析器
  *
  * @author Clinton Begin
  * @author Eduardo Macarron
@@ -58,9 +62,17 @@ public class MapperMethod {
         this.method = new MethodSignature(config, mapperInterface, method);
     }
 
+    /**
+     * 重点！！！
+     * 执行对应的 Mapper 方法，也就是进行实际的调用
+     * @param sqlSession
+     * @param args
+     * @return
+     */
     public Object execute(SqlSession sqlSession, Object[] args) {
         Object result;
         switch (command.getType()) {
+            // insert和delete 类型的操作实际上都会委托给 update
             case INSERT: {
                 Object param = method.convertArgsToSqlCommandParam(args);
                 result = rowCountResult(sqlSession.insert(command.getName(), param));
@@ -76,17 +88,18 @@ public class MapperMethod {
                 result = rowCountResult(sqlSession.delete(command.getName(), param));
                 break;
             }
-            case SELECT:
+            case SELECT: // sql执行中最重要的部分
+                // 如果无返回值，并且参数中存在 ResultHandler 类型，则直接执行，响应结果交由 ResultHandler 处理
                 if (method.returnsVoid() && method.hasResultHandler()) {
                     executeWithResultHandler(sqlSession, args);
                     result = null;
-                } else if (method.returnsMany()) {
+                } else if (method.returnsMany()) { // 如果是返回多数据集
                     result = executeForMany(sqlSession, args);
-                } else if (method.returnsMap()) {
+                } else if (method.returnsMap()) { // 如果是返回map
                     result = executeForMap(sqlSession, args);
-                } else if (method.returnsCursor()) {
+                } else if (method.returnsCursor()) { // 如果是返回 cursor游标
                     result = executeForCursor(sqlSession, args);
-                } else {
+                } else { // 其他类型统一当成单结果处理
                     Object param = method.convertArgsToSqlCommandParam(args);
                     result = sqlSession.selectOne(command.getName(), param);
                     if (method.returnsOptional() && (result == null || !method.getReturnType().equals(result.getClass()))) {
@@ -94,7 +107,7 @@ public class MapperMethod {
                     }
                 }
                 break;
-            case FLUSH:
+            case FLUSH: // 清除 statement 操作，例如 reuse、batch 类型的 Executor 内部会持有 Statement 引用，使用该 类型 就能将其关闭并清除
                 result = sqlSession.flushStatements();
                 break;
             default:
@@ -107,6 +120,11 @@ public class MapperMethod {
         return result;
     }
 
+    /**
+     * 处理数据影响的结果响应 int值，将其转成对应类型数据，如转成boolean或者Long
+     * @param rowCount
+     * @return
+     */
     private Object rowCountResult(int rowCount) {
         final Object result;
         if (method.returnsVoid()) {
@@ -124,17 +142,27 @@ public class MapperMethod {
         return result;
     }
 
+    /**
+     * 执行语句，但结果通过 ResultHandler 来处理
+     * @param sqlSession
+     * @param args
+     */
     private void executeWithResultHandler(SqlSession sqlSession, Object[] args) {
         MappedStatement ms = sqlSession.getConfiguration().getMappedStatement(command.getName());
+        // 不支持无返回值并且不是调用存储过程的方式调用
         if (!StatementType.CALLABLE.equals(ms.getStatementType())
                 && void.class.equals(ms.getResultMaps().get(0).getType())) {
             throw new BindingException(
                     "method " + command.getName() + " needs either a @ResultMap annotation, a @ResultType annotation,"
                             + " or a resultType attribute in XML so a ResultHandler can be used as a parameter.");
         }
+        // 对参数进行处理
         Object param = method.convertArgsToSqlCommandParam(args);
+        // 判断入参是否存在 RowBounds，如果存在则表示需要限制行
         if (method.hasRowBounds()) {
+            // 获取 RowBounds 参数
             RowBounds rowBounds = method.extractRowBounds(args);
+            // 直接查询
             sqlSession.select(command.getName(), param, rowBounds, method.extractResultHandler(args));
         } else {
             sqlSession.select(command.getName(), param, method.extractResultHandler(args));
@@ -252,6 +280,10 @@ public class MapperMethod {
             }
         }
 
+        /**
+         * 实际上就是方法的全访问限制名
+         * @return
+         */
         public String getName() {
             return name;
         }
@@ -296,7 +328,8 @@ public class MapperMethod {
     }
 
     /**
-     * method 签名对象，即对 method 进行解析后的签名值，会预先解析准备好方法返回是否是 list、是否返回map、是否返回void 等
+     * method 签名对象，即对 method 进行解析后的签名值，会预先解析准备好方法返回是否是 list、是否返回map、是否返回void 等，
+     * 最重要的是持有方法入参的映射关系
      */
     public static class MethodSignature {
         /**
@@ -327,7 +360,13 @@ public class MapperMethod {
          * map的key
          */
         private final String mapKey;
+        /**
+         * 记录入参中 ResultHandler 在参数里的下标
+         */
         private final Integer resultHandlerIndex;
+        /**
+         *
+         */
         private final Integer rowBoundsIndex;
         /**
          * 参数名称解析器
@@ -368,6 +407,11 @@ public class MapperMethod {
             this.paramNameResolver = new ParamNameResolver(configuration, method);
         }
 
+        /**
+         * 将参数数组转换为 参数名-参数值 的入参
+         * @param args
+         * @return
+         */
         public Object convertArgsToSqlCommandParam(Object[] args) {
             return paramNameResolver.getNamedParams(args);
         }
@@ -384,6 +428,11 @@ public class MapperMethod {
             return resultHandlerIndex != null;
         }
 
+        /**
+         * 获取参数中的 ResultHandler 对象
+         * @param args
+         * @return
+         */
         public ResultHandler extractResultHandler(Object[] args) {
             return hasResultHandler() ? (ResultHandler) args[resultHandlerIndex] : null;
         }

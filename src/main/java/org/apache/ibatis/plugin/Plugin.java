@@ -27,14 +27,23 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 将 Interceptor 进行jdk代理，该类作为 InvocationHandler，会在调用方法时，校验方法是否命中 Signature 指定的描述
+ * 对 Interceptor 进行包装，由于拦截器实际上使用 Jdk Proxy 来实现的拦截器功能，因此该类通过 InvocationHandler，
+ * 在调用方法时，校验方法是否命中 Signature 指定的描述，来控制被包装的 Interceptor 是否需要执行
  *
  * @author Clinton Begin
  */
 public class Plugin implements InvocationHandler {
-
+    /**
+     * 被代理的原对象，用于拦截器中执行
+     */
     private final Object target;
+    /**
+     * 当前被包装的拦截器本体，如果满足被拦截条件则会调用该拦截器
+     */
     private final Interceptor interceptor;
+    /**
+     * 拦截签名map
+     */
     private final Map<Class<?>, Set<Method>> signatureMap;
 
     private Plugin(Object target, Interceptor interceptor, Map<Class<?>, Set<Method>> signatureMap) {
@@ -58,12 +67,21 @@ public class Plugin implements InvocationHandler {
         // 根据描述符 Signature 指定的类型，获取当前目标对象存在的接口
         Class<?>[] interfaces = getAllInterfaces(type, signatureMap);
         if (interfaces.length > 0) {
-            // 开始进行代理，应用拦截器功能
+            // 基于获取到的 interface + 拦截器 + 需进行拦截的方法签名，生成代理对象
             return Proxy.newProxyInstance(type.getClassLoader(), interfaces, new Plugin(target, interceptor, signatureMap));
         }
         return target;
     }
 
+    /**
+     * 代理对象被调用时触发，会判断被调用的方法是否在 被包装拦截器 的 Signature 方法中，如果在则执行拦截器的调用操作
+     * @param proxy 当前被调用的代理对象
+     * @param method 当前被调用的方法
+     * @param args 方法入参
+     *
+     * @return
+     * @throws Throwable
+     */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         try {
@@ -84,7 +102,7 @@ public class Plugin implements InvocationHandler {
      * 获取拦截器的拦截目标描述符，并将其使用 class-method 的方式映射
      *
      * @param interceptor 当前拦截器
-     * @return
+     * @return key：执行器生效的类型，value：执行器生效的方法Method对象
      */
     private static Map<Class<?>, Set<Method>> getSignatureMap(Interceptor interceptor) {
         /*
@@ -116,7 +134,7 @@ public class Plugin implements InvocationHandler {
     }
 
     /**
-     * 按 Signature 中指定的type类型，获取指定类型所实现的接口列表
+     * 获取当前类型中，能够进行拦截操作的接口。因为当前类型可能实现多个接口，即可能会有多个拦截器实现
      *
      * @param type
      * @param signatureMap

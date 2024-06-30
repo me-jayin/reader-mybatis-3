@@ -85,11 +85,17 @@ public class ManagedTransaction implements Transaction {
     }
   }
 
+  /**
+   * 打开 connection
+   * @throws SQLException
+   */
   protected void openConnection() throws SQLException {
     if (log.isDebugEnabled()) {
       log.debug("Opening JDBC Connection");
     }
+    // 跳过 DataSource 获取连接对象
     this.connection = this.dataSource.getConnection();
+    // 如果指定了事务隔离级别，则跳过 connection 进行设置
     if (this.level != null) {
       this.connection.setTransactionIsolation(this.level.getLevel());
     }

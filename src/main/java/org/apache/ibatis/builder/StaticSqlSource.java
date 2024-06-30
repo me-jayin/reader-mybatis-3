@@ -28,9 +28,14 @@ import java.util.List;
  * @author Clinton Begin
  */
 public class StaticSqlSource implements SqlSource {
-  /** 替换了 #{} 占位符的表达式 */
+  /**
+   * 替换了 #{} 占位符的表达式，如： select * from a where c = ?
+   * 只包含 ? 预处理器占位符
+   */
   private final String sql;
-  /** 解析出来的 ParameterMapping */
+  /**
+   * 记录预处理占位符与参数映射关系
+   */
   private final List<ParameterMapping> parameterMappings;
   private final Configuration configuration;
 
@@ -44,6 +49,11 @@ public class StaticSqlSource implements SqlSource {
     this.configuration = configuration;
   }
 
+  /**
+   *
+   * @param parameterObject
+   * @return
+   */
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
     // 基于已解析的 ParameterMapping 生成 BoundSql 的

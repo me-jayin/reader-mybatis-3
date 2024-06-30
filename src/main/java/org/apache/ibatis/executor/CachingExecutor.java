@@ -29,7 +29,8 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * 缓存执行器，执行器的包装类，使执行器具有缓存的能力
+ * 缓存执行器，执行器的包装类，使执行器具有缓存的能力。
+ * 如果开启了一二级缓存，就会将 Executor 包装一层
  * @author Clinton Begin
  * @author Eduardo Macarron
  */

@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
+ * StaticSqlSource 构建器，构建一个 StaticSqlSource 时，会解析 sql 语句中的 #{} 占位符，将其替换为 ? 并记录参数映射列表
  * @author Clinton Begin
  */
 public class SqlSourceBuilder extends BaseBuilder {
@@ -41,7 +42,7 @@ public class SqlSourceBuilder extends BaseBuilder {
     }
 
     /**
-     * 开始解析sql并构建 StaticSqlSource
+     * 开始解析sql并构建 StaticSqlSource，这里会解析所有的 #{} 占位符，将其替换为 ?，并且记录每个占位符与参数的映射关系
      *
      * @param originalSql
      * @param parameterType
@@ -89,7 +90,8 @@ public class SqlSourceBuilder extends BaseBuilder {
     }
 
     /**
-     * ParameterMapping 的 TokenHandler 处理器
+     * ParameterMapping 的 TokenHandler 处理器，该处理器处理表达时时，会表达式替换为 ? ，并把当前表达式按顺序添加到 ParameterMapping 列表中。
+     * 保证后续解析 PreparedStatement 的值填充时能够找到对应的 value
      */
     private static class ParameterMappingTokenHandler extends BaseBuilder implements TokenHandler {
 
@@ -131,7 +133,7 @@ public class SqlSourceBuilder extends BaseBuilder {
         private ParameterMapping buildParameterMapping(String content) {
             // 解析表达式结果
             Map<String, String> propertiesMap = parseParameterMapping(content);
-            // 获取属性取值路径
+            // 获取属性取值表达式
             String property = propertiesMap.get("property");
             Class<?> propertyType;
             // 判断是否有get操作
@@ -152,11 +154,11 @@ public class SqlSourceBuilder extends BaseBuilder {
                     propertyType = Object.class;
                 }
             }
-            // 构建一个 ParameterMapping 的构建者
+            // 构建一个 ParameterMapping 的构建者，这里将 properties 进行设置
             ParameterMapping.Builder builder = new ParameterMapping.Builder(configuration, property, propertyType);
             Class<?> javaType = propertyType;
             String typeHandlerAlias = null;
-            // 对 #{} 中的参数进行填充处理
+            // 对 #{} 的属性设置进行初始化，如 javaType 等附加属性
             for (Map.Entry<String, String> entry : propertiesMap.entrySet()) {
                 String name = entry.getKey();
                 String value = entry.getValue();
@@ -175,7 +177,7 @@ public class SqlSourceBuilder extends BaseBuilder {
                     typeHandlerAlias = value;
                 } else if ("jdbcTypeName".equals(name)) {
                     builder.jdbcTypeName(value);
-                } else if ("property".equals(name)) {
+                } else if ("property".equals(name)) { // 由于构建builder时已经设置该值，因此这里忽略
                     // Do Nothing
                 } else if ("expression".equals(name)) {
                     throw new BuilderException("Expression based parameters are not supported yet");

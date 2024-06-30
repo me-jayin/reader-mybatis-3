@@ -42,6 +42,8 @@ public class MapperRegistry {
 
   /**
    * 通过Mapper接口及SqlSession获取 Mapper 对象
+   * 实际会通过 MapperProxyFactory 工厂，基于Jdk的Proxy来创建一个代理对象，而核心是通过 InvocationHandler 的实现类 MapperProxy 来完成实际的调用。
+   * 其中 MapperProxyFactory 是在 addMapper(Class) 操作时初始化的
    * @param type
    * @param sqlSession
    * @return

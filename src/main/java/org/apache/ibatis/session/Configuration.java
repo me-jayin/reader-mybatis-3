@@ -702,6 +702,13 @@ public class Configuration {
         return MetaObject.forObject(object, objectFactory, objectWrapperFactory, reflectorFactory);
     }
 
+    /**
+     * 创建参数处理器，并对参数处理器进行拦截器增强
+     * @param mappedStatement
+     * @param parameterObject
+     * @param boundSql
+     * @return
+     */
     public ParameterHandler newParameterHandler(MappedStatement mappedStatement, Object parameterObject,
                                                 BoundSql boundSql) {
         ParameterHandler parameterHandler = mappedStatement.getLang().createParameterHandler(mappedStatement,
@@ -709,6 +716,16 @@ public class Configuration {
         return (ParameterHandler) interceptorChain.pluginAll(parameterHandler);
     }
 
+    /**
+     * 创建结果集处理器，并进行拦截器增强
+     * @param executor
+     * @param mappedStatement
+     * @param rowBounds
+     * @param parameterHandler
+     * @param resultHandler
+     * @param boundSql
+     * @return
+     */
     public ResultSetHandler newResultSetHandler(Executor executor, MappedStatement mappedStatement, RowBounds rowBounds,
                                                 ParameterHandler parameterHandler, ResultHandler resultHandler, BoundSql boundSql) {
         ResultSetHandler resultSetHandler = new DefaultResultSetHandler(executor, mappedStatement, parameterHandler,
@@ -716,10 +733,25 @@ public class Configuration {
         return (ResultSetHandler) interceptorChain.pluginAll(resultSetHandler);
     }
 
+    /**
+     * 创建一个 StatementHandler，用于构建 PreparedStatement 对象
+     * @param executor
+     * @param mappedStatement
+     * @param parameterObject
+     * @param rowBounds
+     * @param resultHandler
+     * @param boundSql BoundSql，即持有 SQL、请求参数
+     * @return
+     */
     public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement,
                                                 Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+        // 构建一个 RoutingStatementHandler 路由对象，内部实际上会持有一个 委托对象，而委托对象才是最终 StatementHandler，有以下类型：
+        // 1. SimpleStatementHandler：简单的
+        // 2. PreparedStatementHandler：预处理
+        // 3. CallableStatementHandler：可回调
         StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject,
                 rowBounds, resultHandler, boundSql);
+        // 进行 Interceptor 装配，生成最终代理后的 StatementHandler
         return (StatementHandler) interceptorChain.pluginAll(statementHandler);
     }
 
@@ -728,7 +760,9 @@ public class Configuration {
     }
 
     /**
-     * 创建执行器，会根据缓存的启用来包装 CacheExecutor
+     * 创建执行器，创建时会有以下操作
+     * 1.会根据缓存的启用来包装 CacheExecutor
+     * 2.使用 Interceptor 对执行器进行加强
      * @param transaction 事务对象
      * @param executorType 执行器类型
      * @return
@@ -924,10 +958,21 @@ public class Configuration {
         return incompleteMethods;
     }
 
+    /**
+     * 获取 MappedStatement 对象
+     * @param id
+     * @return
+     */
     public MappedStatement getMappedStatement(String id) {
         return this.getMappedStatement(id, true);
     }
 
+    /**
+     * 获取 MappedStatement，并根据入参判断是否需要确保所有 statement 都初始化完成
+     * @param id
+     * @param validateIncompleteStatements 判断是否校验未完成的 MappedStatement
+     * @return
+     */
     public MappedStatement getMappedStatement(String id, boolean validateIncompleteStatements) {
         if (validateIncompleteStatements) {
             buildAllStatements();

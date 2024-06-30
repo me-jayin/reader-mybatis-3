@@ -19,7 +19,7 @@ public interface TestMapper {
 
     List<User> selectOfParamMap(String city, String province);
 
-    List<Address> selectByCity(String value1, String value2);
+    List<Address> selectByCity(@Param("value1") String value1, @Param("value2") String value2);
 
     @Select("<script>" +
             "SELECT #{city} city <if test=\"city=''\">, 1 AS test</if>" +
@@ -31,6 +31,8 @@ public interface TestMapper {
     List<Address> selectByCity2(String city);
 
     List<Object> selectMultiToList();
+
+    void selectByIds(@Param("ids") List<String> ids);
 
 //    List<User> selectMultiToMap();
 }

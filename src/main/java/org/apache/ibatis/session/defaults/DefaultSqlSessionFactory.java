@@ -99,7 +99,7 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
   }
 
   /**
-   * 从 DataSource 开启一个 SqlSession 会话
+   * 从 DataSource 开启一个 SqlSession 会话，每次调用都会产生一个执行器，也就是说一个 SqlSession 会创建一个执行器
    * @param execType 执行器类型 SIMPLE 正常, REUSE 可复用, BATCH 批
    * @param level 事务级别
    * @param autoCommit 是否自动提交

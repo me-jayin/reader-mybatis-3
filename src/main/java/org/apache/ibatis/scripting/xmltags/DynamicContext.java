@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 /**
+ * 动态参数上下文，里面持有入参对象、sql拼接对象（用于构建最终的sql）
  * @author Clinton Begin
  */
 public class DynamicContext {
@@ -34,7 +35,9 @@ public class DynamicContext {
     public static final String DATABASE_ID_KEY = "_databaseId";
 
     static {
-        // 针对 ContextMap 类型，设置对应的访问器
+        // 往 Ognl 中添加针对 ContextMap 类型的访问器，该访问器会在 ContextMap 中尝试从一级key获取对应值，如果获取不到，则会从 ContextMap
+        // 获取 _parameter 的值并继续尝试从其值里获取对应key的值
+        // ContextAccessor.getProperty
         OgnlRuntime.setPropertyAccessor(ContextMap.class, new ContextAccessor());
     }
 

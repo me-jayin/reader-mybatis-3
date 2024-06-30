@@ -10,10 +10,10 @@
         <property name="test" value="12"/>
     </properties>
 
-    <settings>
+<!--    <settings>-->
         <!--======= basic =======-->
         <!-- * 日志实现类，可指定Mapper的日志输出规则 -->
-        <setting name="logImpl" value="org.apache.ibatis.logging.slf4j.Slf4jImpl"/>
+<!--        <setting name="logImpl" value="org.apache.ibatis.logging.slf4j.Slf4jImpl"/>-->
 <!--        &lt;!&ndash; 自定义全局日志前缀，可以在mybatis执行sql的日志时加上指定前缀，更方便的找到对应执行sql &ndash;&gt;-->
 <!--        <setting name="logPrefix" value="日志前缀-"/>-->
 <!--        &lt;!&ndash; * 是否进行驼峰转换 &ndash;&gt;-->
@@ -134,7 +134,7 @@
 <!--        <setting name="configurationFactory" value="xyz.me4cxy.factory.CustomerConfigurationFactory"/>-->
 <!--        &lt;!&ndash; 指定默认sql提供类，详情可看 org.apache.ibatis.annotations.SelectProvider 的注释示例 &ndash;&gt;-->
 <!--        <setting name="defaultSqlProviderType" value="xyz.me4cxy.factory.CustomerSqlProvider"/>-->
-    </settings>
+<!--    </settings>-->
 
 <!--    <typeAliases>-->
 <!--        &lt;!&ndash; 给 xyz.me4cxy.dto.Address 指定别名 Addr &ndash;&gt;-->
